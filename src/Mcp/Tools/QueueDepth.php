@@ -6,7 +6,6 @@ namespace BAGArt\TelegramBotManagement\Mcp\Tools;
 
 use BAGArt\TelegramBot\Contracts\Outbound\OutboundQueueContract;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -32,7 +31,9 @@ class QueueDepth extends Tool
     {
         return [
             'bot_id' => $schema->string()
-                ->description('Optional bot ID. The base queue is a single global channel, so this is accepted for forward compatibility but does not currently filter the count.'),
+                ->description(
+                    'Optional bot ID. The base queue is a single global channel, so this is accepted for forward compatibility but does not currently filter the count.'
+                ),
         ];
     }
 

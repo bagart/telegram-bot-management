@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace BAGArt\TelegramBotManagement\Commands;
 
-use BAGArt\ASKClient\AskClient\PoolWarmer;
-use BAGArt\ASKClient\AskHttpSocketClient\AskHttpSocketClient;
+use BAGArt\ASKClient\HttpClient\PoolWarmer;
+use BAGArt\ASKClient\SocketClient\AskHttpSocketClient;
 use BAGArt\ASKClientRedis\Redis\RedisDsn;
 use BAGArt\AsyncKernel\ASKClock;
 use BAGArt\AsyncKernel\AsyncKernel;
@@ -61,8 +61,8 @@ class TgOutboundDaemonCommand extends Command
             $redisHost = (string)$this->option('redis-host');
             $serviceConfig->outboundQueueStore = 'redis';
             $serviceConfig->redisDsn = (new RedisDsn(
-                host: $redisHost !== '' ? $redisHost : (string) config('database.redis.default.host', '127.0.0.1'),
-                port: (int)$this->option('redis-port') ?: (int) config('database.redis.default.port', 6379),
+                host: $redisHost !== '' ? $redisHost : (string)config('database.redis.default.host', '127.0.0.1'),
+                port: (int)$this->option('redis-port') ?: (int)config('database.redis.default.port', 6379),
                 timeout: (float)$this->option('redis-timeout') ?: 2.0,
             ))->toString();
         }
@@ -101,17 +101,17 @@ class TgOutboundDaemonCommand extends Command
 
     private function warmSocketPool(AsyncKernel $kernel, ASKLogWrapper $logger): void
     {
-        $pool = (array) config('tg-outbound-daemon.daemon.socket_pool', []);
+        $pool = (array)config('tg-outbound-daemon.daemon.socket_pool', []);
 
         if (!($pool['enabled'] ?? false)) {
             return;
         }
 
         $warmCount = $this->option('warm-connections') !== null
-            ? (int) $this->option('warm-connections')
-            : (int) ($pool['warm_connections'] ?? 4);
+            ? (int)$this->option('warm-connections')
+            : (int)($pool['warm_connections'] ?? 4);
 
-        $warmHost = (string) ($pool['warm_host'] ?? 'api.telegram.org');
+        $warmHost = (string)($pool['warm_host'] ?? 'api.telegram.org');
 
         // Initial one-time warm-up so the first requests pay no handshake cost.
         if ($warmCount > 0) {

@@ -18,6 +18,6 @@ class TgMcpStartCommand extends Command
 {
     public function handle(): int
     {
-        return (int) Artisan::call('mcp:start', ['handle' => 'tg-ops']);
+        return (int)Artisan::call('mcp:start', ['handle' => 'tg-ops']);
     }
 }

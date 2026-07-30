@@ -115,42 +115,54 @@ class TgOutboundToolCommand extends Command
 
     private function showWorkers(bool $json): int
     {
-        $this->warn('Worker heartbeat inspection requires direct Redis access. Use standalone outbound-tool.php with --mode=multi.');
+        $this->warn(
+            'Worker heartbeat inspection requires direct Redis access. Use standalone outbound-tool.php with --mode=multi.'
+        );
 
         return self::SUCCESS;
     }
 
     private function showLocks(bool $json): int
     {
-        $this->warn('Lock inspection requires direct Redis access. Use standalone outbound-tool.php with --mode=multi.');
+        $this->warn(
+            'Lock inspection requires direct Redis access. Use standalone outbound-tool.php with --mode=multi.'
+        );
 
         return self::SUCCESS;
     }
 
     private function unlockChat(string $botId, string $chatId, bool $json): int
     {
-        $this->warn('Unlock requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --bot-id=... --chat-id=...');
+        $this->warn(
+            'Unlock requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --bot-id=... --chat-id=...'
+        );
 
         return self::SUCCESS;
     }
 
     private function traceTask(string $taskId, bool $json): int
     {
-        $this->warn('Task tracing requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --trace-task=...');
+        $this->warn(
+            'Task tracing requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --trace-task=...'
+        );
 
         return self::SUCCESS;
     }
 
     private function peek(int $limit, bool $json): int
     {
-        $this->warn('Peek requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --peek --limit='.$limit);
+        $this->warn(
+            'Peek requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --peek --limit='.$limit
+        );
 
         return self::SUCCESS;
     }
 
     private function showDelayed(int $limit, bool $json): int
     {
-        $this->warn('Delayed task inspection requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --delayed');
+        $this->warn(
+            'Delayed task inspection requires direct Redis access. Use standalone outbound-tool.php with --mode=multi --delayed'
+        );
 
         return self::SUCCESS;
     }

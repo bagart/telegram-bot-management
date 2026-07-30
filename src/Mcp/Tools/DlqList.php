@@ -10,7 +10,6 @@ use BAGArt\TelegramBot\Contracts\Outbound\OutboundQueueContract;
 use BAGArt\TelegramBot\Outbound\Config\OutboundWorkerConfig;
 use BAGArt\TelegramBot\Outbound\DeadLetterEntry;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -43,22 +42,28 @@ class DlqList extends Tool
     public function handle(Request $request): Response
     {
         if (!$this->queue instanceof AtomicDlqQueueContract) {
-            return Response::error('The current queue adapter does not support DLQ operations (requires AtomicDlqQueueContract).');
+            return Response::error(
+                'The current queue adapter does not support DLQ operations (requires AtomicDlqQueueContract).'
+            );
         }
 
         if (!$this->queue instanceof ChannelDiscoverableQueueContract) {
-            return Response::error('The current queue adapter does not support channel discovery (requires ChannelDiscoverableQueueContract).');
+            return Response::error(
+                'The current queue adapter does not support channel discovery (requires ChannelDiscoverableQueueContract).'
+            );
         }
 
-        $botId = $request->has('bot_id') ? (string) $request->string('bot_id') : null;
+        $botId = $request->has('bot_id') ? (string)$request->string('bot_id') : null;
         $limit = $request->has('limit') ? max(1, $request->integer('limit')) : 50;
 
         $channels = $this->queue->getDlqChannels('tg-dlq:*');
         if ($botId !== null && $botId !== '') {
-            $channels = array_values(array_filter(
-                $channels,
-                static fn (string $ch): bool => str_ends_with($ch, $botId),
-            ));
+            $channels = array_values(
+                array_filter(
+                    $channels,
+                    static fn (string $ch): bool => str_ends_with($ch, $botId),
+                )
+            );
             if ($channels === []) {
                 return Response::json(['entries' => [], 'note' => "No DLQ channel found for bot: {$botId}"]);
             }

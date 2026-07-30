@@ -10,17 +10,17 @@ Bot manager: storing tokens in the database, migrations, commands for managing b
 
 ### Coverage by Folder
 
-| Folder | File | Coverage | Bar |
-|--------|------|----------|-----|
-| **Models** | TgBot | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
-| | TgBotModule | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
-| | TgBotOwner | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
-| **Commands** | TgBotManagerInit | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
-| | TgBotManagerMigrate | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
-| | TgBMPollerCommand | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
-| | TgBMMonitorCommand | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
-| **Migrations** | 3 migration files | — | schema only |
-| | TelegramBotManager | `0.0%` | `░░░░░░░░░░░░░░░░░░░░` |
+| Folder         | File                | Coverage | Bar                    |
+|----------------|---------------------|----------|------------------------|
+| **Models**     | TgBot               | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
+|                | TgBotModule         | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
+|                | TgBotOwner          | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
+| **Commands**   | TgBotManagerInit    | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
+|                | TgBotManagerMigrate | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
+|                | TgBMPollerCommand   | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
+|                | TgBMMonitorCommand  | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
+| **Migrations** | 3 migration files   | —        | schema only            |
+|                | TelegramBotManager  | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
 
 ### Overall
 

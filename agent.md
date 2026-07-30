@@ -38,7 +38,7 @@ async-kernel + ask-client + ask-client-redis  (queue, cache, transport)
 Primary bot entity. Non-incrementing string PK `bot_id` (extracted from token:
 everything before the first `:`).
 
-- `bot_id` — string(20), PK
+- `bot_id` — string (20), PK
 - `token` — string, hidden from serialization
 - `secret_token` — string, nullable, hidden from serialization
 - `owners(): BelongsToMany` — through `tg_bot_owners` pivot (bot_id ↔ user_id)
@@ -73,8 +73,8 @@ Bot-to-user binding. Auto-increment PK.
 
 `final readonly class` implementing `BotTokenResolverContract`.
 
-Resolves a `bot_id` to its token from the DB via `TgBot::query()`.
-Throws `RuntimeException` if bot not found or token is empty.
+Resolves a `bot_id` to its token from the DB via `TgBot::query()`. Throws `RuntimeException` if bot not found or token
+is empty.
 
 Registered as singleton for `BotTokenResolverContract` in `TelegramBotServiceProvider`.
 
@@ -99,32 +99,33 @@ Implements `TgBotRegistryContract`. Read-only bot registry backed by the DB.
 
 ### Bot Management
 
-| Command | Signature | Purpose |
-|---------|-----------|---------|
-| TgBotManagerInit | `tgbm:init --token= --user_id=` | Register bot in DB (extracts bot_id from token) |
-| TgBotManagerMigrate | `migrate:tgbm` | Run library migrations |
+| Command             | Signature                       | Purpose                                         |
+|---------------------|---------------------------------|-------------------------------------------------|
+| TgBotManagerInit    | `tgbm:init --token= --user_id=` | Register bot in DB (extracts bot_id from token) |
+| TgBotManagerMigrate | `migrate:tgbm`                  | Run library migrations                          |
 
 ### Polling & Monitoring
 
-| Command | Signature | Purpose |
-|---------|-----------|---------|
-| TgBMPollerCommand | `tgbm:poller` | Multi-bot long-polling daemon |
-| TgBMMonitorCommand | `tgbm:monitor` | Bot status monitor |
+| Command            | Signature      | Purpose                       |
+|--------------------|----------------|-------------------------------|
+| TgBMPollerCommand  | `tgbm:poller`  | Multi-bot long-polling daemon |
+| TgBMMonitorCommand | `tgbm:monitor` | Bot status monitor            |
 
 ### Outbound Infrastructure
 
-| Command | Signature | Purpose |
-|---------|-----------|---------|
-| TgOutboundDaemonCommand | `tg:outbound:daemon` | Outbound worker daemon (single/multi mode, Redis, socket pool warm-up) |
-| TgOutboundDlqCommand | `tg:outbound:dlq` | DLQ management (list/retry/purge) |
-| TgOutboundMetricsCommand | `tg:outbound:metrics` | Hourly outbound metrics viewer |
-| TgOutboundToolCommand | `tg:outbound:tool` | Queue inspection (status, bottlenecks, workers) |
+| Command                  | Signature             | Purpose                                                                |
+|--------------------------|-----------------------|------------------------------------------------------------------------|
+| TgOutboundDaemonCommand  | `tg:outbound:daemon`  | Outbound worker daemon (single/multi mode, Redis, socket pool warm-up) |
+| TgOutboundDlqCommand     | `tg:outbound:dlq`     | DLQ management (list/retry/purge)                                      |
+| TgOutboundMetricsCommand | `tg:outbound:metrics` | Hourly outbound metrics viewer                                         |
+| TgOutboundToolCommand    | `tg:outbound:tool`    | Queue inspection (status, bottlenecks, workers)                        |
 
 ---
 
 # Service Provider
 
 `TelegramBotManagementServiceProvider` registers:
+
 - Management commands (all Artisan commands above)
 - `BotTokenResolverContract` → `TgDbTokenResolver` (singleton)
 - `TgBotSetupFactory` is NOT exposed — internal to `telegram-bot-lib`'s provider
@@ -146,10 +147,9 @@ Both protected by TgIpValidatorMiddleware + TgSecretValidatorMiddleware.
 
 # DI Rules
 
-- Laravel-facing classes (controllers, middlewares, commands) receive only
-  concrete classes or registered contracts via constructor/method injection.
-- `TgBotSetupFactory` is internal to `TelegramBotServiceProvider` — do NOT
-  inject it into commands or middleware.
+- Laravel-facing classes (controllers, middlewares, commands) receive only concrete classes or registered contracts via
+  constructor/method injection.
+- `TgBotSetupFactory` is internal to `TelegramBotServiceProvider` — do NOT inject it into commands or middleware.
 - All outbound singletons (`TgOutboundDaemon`, `TgOutboundStats`, `TgSenderContract`,
   `OutboundQueueContract`) are registered in `telegram-bot-lib`'s provider.
 

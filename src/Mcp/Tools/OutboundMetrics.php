@@ -6,7 +6,6 @@ namespace BAGArt\TelegramBotManagement\Mcp\Tools;
 
 use BAGArt\TelegramBot\Outbound\TgOutboundStats;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -48,9 +47,9 @@ class OutboundMetrics extends Tool
             ]);
         }
 
-        $fromHour = (string) $request->string('from_hour');
+        $fromHour = (string)$request->string('from_hour');
         $toHour = $request->has('to_hour')
-            ? (string) $request->string('to_hour')
+            ? (string)$request->string('to_hour')
             : date('YmdH');
 
         if (!preg_match('/^\d{10}$/', $fromHour) || !preg_match('/^\d{10}$/', $toHour)) {
@@ -58,7 +57,7 @@ class OutboundMetrics extends Tool
         }
 
         if ($request->has('bot_id')) {
-            $metrics = $this->stats->getBotMetrics((string) $request->string('bot_id'), $fromHour, $toHour);
+            $metrics = $this->stats->getBotMetrics((string)$request->string('bot_id'), $fromHour, $toHour);
             $mode = 'per_bot';
             $botId = $request->string('bot_id');
         } else {
