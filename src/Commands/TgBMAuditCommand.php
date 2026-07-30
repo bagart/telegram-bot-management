@@ -43,7 +43,7 @@ class TgBMAuditCommand extends Command
         $defaultPath = 'misc/BAGArt/telegram-bot-lib/src/Outbound';
 
         if ($this->option('path')) {
-            $base = base_path((string) $this->option('path'));
+            $base = base_path((string)$this->option('path'));
         } elseif ($this->option('all')) {
             $base = base_path('misc/BAGArt');
         } else {
@@ -121,7 +121,7 @@ class TgBMAuditCommand extends Command
             'captureException',
             'rescue',
         ];
-        $legitRegex = '/(' . implode('|', $legitPatterns) . ')/';
+        $legitRegex = '/('.implode('|', $legitPatterns).')/';
 
         $total = count($lines);
         for ($i = 0; $i < $total; $i++) {
@@ -185,9 +185,17 @@ class TgBMAuditCommand extends Command
     private function checkConstructorIo(string $path, string $source, array $lines): void
     {
         $ioTokens = [
-            'new \Redis', 'new Redis(', 'new \RedisCluster', 'new RedisCluster(',
-            'stream_socket_client', 'fsockopen', 'pfsockopen', 'socket_create',
-            'new Client(', 'new GuzzleHttp', 'curl_init',
+            'new \Redis',
+            'new Redis(',
+            'new \RedisCluster',
+            'new RedisCluster(',
+            'stream_socket_client',
+            'fsockopen',
+            'pfsockopen',
+            'socket_create',
+            'new Client(',
+            'new GuzzleHttp',
+            'curl_init',
         ];
 
         // Find __construct( ... ) body span.
@@ -271,9 +279,9 @@ class TgBMAuditCommand extends Command
         $this->newLine();
 
         foreach ($byRule as $rule => $items) {
-            $this->line("<options=bold>● {$rule}</> (" . count($items) . ')');
+            $this->line("<options=bold>● {$rule}</> (".count($items).')');
             foreach ($items as $f) {
-                $rel = str_replace(base_path() . '/', '', $f['file']);
+                $rel = str_replace(base_path().'/', '', $f['file']);
                 $this->line(sprintf('  <fg=gray>%s:%d</>  %s', $rel, $f['line'], $f['snippet']));
             }
             $this->newLine();

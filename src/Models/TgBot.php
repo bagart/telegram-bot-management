@@ -7,6 +7,7 @@ namespace BAGArt\TelegramBotManagement\Models;
 use Illuminate\Database\Eloquent\Concerns\HasTimestamps;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * @property string $bot_id
@@ -39,8 +40,8 @@ class TgBot extends Model
         return $this->belongsToMany(TgBotOwner::class, 'tg_bot_owners', 'bot_id', 'user_id');
     }
 
-    public function modules(): BelongsToMany
+    public function moduleEnablements(): HasMany
     {
-        return $this->belongsToMany(TgBotModule::class, 'tg_bot_modules', 'bot_id', 'chat_id');
+        return $this->hasMany(TgModuleEnablement::class, 'bot_id', 'bot_id');
     }
 }

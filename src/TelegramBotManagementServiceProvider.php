@@ -18,6 +18,10 @@ class TelegramBotManagementServiceProvider extends ServiceProvider
         \BAGArt\TelegramBotManagement\Commands\TgOutboundMetricsCommand::class,
         \BAGArt\TelegramBotManagement\Commands\TgOutboundDlqCommand::class,
         \BAGArt\TelegramBotManagement\Commands\TgOutboundToolCommand::class,
+        \BAGArt\TelegramBotManagement\Commands\TgModulesListCommand::class,
+        \BAGArt\TelegramBotManagement\Commands\TgModulesDoctorCommand::class,
+        \BAGArt\TelegramBotManagement\Commands\TgModuleEnableCommand::class,
+        \BAGArt\TelegramBotManagement\Commands\TgModuleDisableCommand::class,
     ];
 
     /**
@@ -30,6 +34,15 @@ class TelegramBotManagementServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        $this->app->singleton(
+            \BAGArt\TelegramBot\Contracts\Modules\ModuleEnablementContract::class,
+            fn ($app): \BAGArt\TelegramBotManagement\Services\TgModuleEnablementService => new \BAGArt\TelegramBotManagement\Services\TgModuleEnablementService(
+                moduleRegistry: $app->make(\BAGArt\TelegramBot\Modules\TgModuleRegistry::class),
+                cache: $app->make(\BAGArt\AsyncKernel\Wrappers\ASKCacheWrapper::class),
+                logger: $app->make(\BAGArt\AsyncKernel\Wrappers\ASKLogWrapper::class),
+            ),
+        );
+
         $this->mergeConfigFrom(
             __DIR__.'/../config/tg-outbound-daemon.php',
             'tg-outbound-daemon',

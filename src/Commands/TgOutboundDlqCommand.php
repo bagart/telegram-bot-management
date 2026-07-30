@@ -74,10 +74,12 @@ class TgOutboundDlqCommand extends Command
 
         $channels = $queue->getDlqChannels('tg-dlq:*');
         if ($botId !== null) {
-            $channels = array_values(array_filter(
-                $channels,
-                fn (string $ch) => str_ends_with($ch, $botId),
-            ));
+            $channels = array_values(
+                array_filter(
+                    $channels,
+                    fn (string $ch) => str_ends_with($ch, $botId),
+                )
+            );
 
             if ($channels === []) {
                 $this->warn("No DLQ channel found for bot: {$botId}");
@@ -103,7 +105,7 @@ class TgOutboundDlqCommand extends Command
             return self::SUCCESS;
         }
 
-        $this->info("DLQ Entries (" . count($entries) . ")");
+        $this->info("DLQ Entries (".count($entries).")");
         $this->newLine();
 
         $rows = array_map(fn (DeadLetterEntry $e) => [
@@ -164,7 +166,9 @@ class TgOutboundDlqCommand extends Command
                     'dto_class' => $envelope->task->dtoClass,
                 ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             } else {
-                $this->info("Retried DLQ entry {$entryId} (bot: {$envelope->task->botConfig->botId}, class: {$envelope->task->dtoClass})");
+                $this->info(
+                    "Retried DLQ entry {$entryId} (bot: {$envelope->task->botConfig->botId}, class: {$envelope->task->dtoClass})"
+                );
             }
 
             break;
@@ -191,10 +195,12 @@ class TgOutboundDlqCommand extends Command
         $channels = $queue->getDlqChannels('tg-dlq:*');
 
         if ($botId !== null) {
-            $channels = array_values(array_filter(
-                $channels,
-                fn (string $ch) => str_ends_with($ch, $botId),
-            ));
+            $channels = array_values(
+                array_filter(
+                    $channels,
+                    fn (string $ch) => str_ends_with($ch, $botId),
+                )
+            );
         }
 
         $total = 0;
@@ -229,7 +235,7 @@ class TgOutboundDlqCommand extends Command
                 'errors' => $errors,
             ], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         } else {
-            $this->info("Retried {$total} DLQ entries" . ($errors > 0 ? " ({$errors} errors)" : ""));
+            $this->info("Retried {$total} DLQ entries".($errors > 0 ? " ({$errors} errors)" : ""));
         }
 
         return self::SUCCESS;

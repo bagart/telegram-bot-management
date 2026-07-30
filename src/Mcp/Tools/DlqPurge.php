@@ -10,7 +10,6 @@ use BAGArt\TelegramBot\Contracts\Outbound\OutboundQueueContract;
 use BAGArt\TelegramBot\Contracts\Outbound\PurgeableQueueContract;
 use BAGArt\TelegramBot\Outbound\TgOutboundStats;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -45,15 +44,21 @@ class DlqPurge extends Tool
     public function handle(Request $request): Response
     {
         if (!$this->queue instanceof AtomicDlqQueueContract) {
-            return Response::error('The current queue adapter does not support DLQ operations (requires AtomicDlqQueueContract).');
+            return Response::error(
+                'The current queue adapter does not support DLQ operations (requires AtomicDlqQueueContract).'
+            );
         }
 
         if (!$this->queue instanceof ChannelDiscoverableQueueContract) {
-            return Response::error('The current queue adapter does not support channel discovery (requires ChannelDiscoverableQueueContract).');
+            return Response::error(
+                'The current queue adapter does not support channel discovery (requires ChannelDiscoverableQueueContract).'
+            );
         }
 
         if (!$this->queue instanceof PurgeableQueueContract) {
-            return Response::error('The current queue adapter does not support purge (requires PurgeableQueueContract).');
+            return Response::error(
+                'The current queue adapter does not support purge (requires PurgeableQueueContract).'
+            );
         }
 
         $days = $request->integer('older_than_days');

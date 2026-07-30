@@ -46,6 +46,6 @@ class TgBotManagerInit extends Command
 
     private function extractBotId(string $token): string
     {
-        return (string) strstr($token, ':', true);
+        return (string)strstr($token, ':', true);
     }
 }

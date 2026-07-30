@@ -11,7 +11,6 @@ use BAGArt\TelegramBot\Outbound\Config\OutboundWorkerConfig;
 use BAGArt\TelegramBot\Outbound\DeadLetterEntry;
 use BAGArt\TelegramBot\Outbound\TgOutboundStats;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -47,14 +46,18 @@ class DlqRetry extends Tool
     public function handle(Request $request): Response
     {
         if (!$this->queue instanceof AtomicDlqQueueContract) {
-            return Response::error('The current queue adapter does not support DLQ operations (requires AtomicDlqQueueContract).');
+            return Response::error(
+                'The current queue adapter does not support DLQ operations (requires AtomicDlqQueueContract).'
+            );
         }
 
         if (!$this->queue instanceof ChannelDiscoverableQueueContract) {
-            return Response::error('The current queue adapter does not support channel discovery (requires ChannelDiscoverableQueueContract).');
+            return Response::error(
+                'The current queue adapter does not support channel discovery (requires ChannelDiscoverableQueueContract).'
+            );
         }
 
-        $entryId = trim((string) $request->string('entry_id'));
+        $entryId = trim((string)$request->string('entry_id'));
         if ($entryId === '') {
             return Response::error('entry_id is required.');
         }
@@ -75,7 +78,9 @@ class DlqRetry extends Tool
             $entry = DeadLetterEntry::fromJson($entryData);
 
             if (!$entry->canRedeliver($this->workerConfig->maxDlqRedeliveries)) {
-                return Response::error("Entry {$entryId} has exceeded max redeliveries ({$this->workerConfig->maxDlqRedeliveries}).");
+                return Response::error(
+                    "Entry {$entryId} has exceeded max redeliveries ({$this->workerConfig->maxDlqRedeliveries})."
+                );
             }
 
             $envelope = $entry->restoreEnvelope();

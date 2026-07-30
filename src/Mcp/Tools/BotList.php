@@ -6,7 +6,6 @@ namespace BAGArt\TelegramBotManagement\Mcp\Tools;
 
 use BAGArt\TelegramBotManagement\Models\TgBot;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;

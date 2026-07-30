@@ -7,7 +7,6 @@ namespace BAGArt\TelegramBotManagement\Mcp\Tools;
 use BAGArt\TelegramBot\Contracts\Outbound\OutboundQueueContract;
 use BAGArt\TelegramBot\Outbound\TgOutboundStats;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
-use Illuminate\JsonSchema\Types\Type;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -45,7 +44,7 @@ class DaemonStatus extends Tool
 
         $lastHour = date('YmdH');
         $metrics = $this->stats->getGlobalMetrics($lastHour, $lastHour);
-        $sent = (int) ($metrics['sent:global'] ?? $metrics["{$lastHour}:sent:global"] ?? 0);
+        $sent = (int)($metrics['sent:global'] ?? $metrics["{$lastHour}:sent:global"] ?? 0);
 
         $assessment = match (true) {
             $sent > 0 => 'likely_up',
