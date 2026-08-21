@@ -43,6 +43,14 @@ class TelegramBotManagementServiceProvider extends ServiceProvider
             ),
         );
 
+        // Same instance as the enablement service — settings share its caches
+        $this->app->singleton(
+            \BAGArt\TelegramBot\Contracts\Modules\ModuleSettingsContract::class,
+            fn ($app): \BAGArt\TelegramBot\Contracts\Modules\ModuleSettingsContract => $app->make(
+                \BAGArt\TelegramBot\Contracts\Modules\ModuleEnablementContract::class
+            ),
+        );
+
         $this->mergeConfigFrom(
             __DIR__.'/../config/tg-outbound-daemon.php',
             'tg-outbound-daemon',

@@ -13,7 +13,6 @@ Bot manager: storing tokens in the database, migrations, commands for managing b
 | Folder         | File                | Coverage | Bar                    |
 |----------------|---------------------|----------|------------------------|
 | **Models**     | TgBot               | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
-|                | TgBotModule         | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
 |                | TgBotOwner          | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
 | **Commands**   | TgBotManagerInit    | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
 |                | TgBotManagerMigrate | `0.0%`   | `░░░░░░░░░░░░░░░░░░░░` |
@@ -39,7 +38,6 @@ Bot manager: storing tokens in the database, migrations, commands for managing b
 misc/BAGArt/TelegramBotManagement/
 ├── Models/
 │   ├── TgBot.php (30 lines) — token storage model
-│   ├── TgBotModule.php — module config
 │   └── TgBotOwner.php — owner mapping
 ├── Commands/
 │   ├── TgBotManagerInit.php (64 lines) — init bot with token

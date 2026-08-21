@@ -42,11 +42,6 @@ everything before the first `:`).
 - `token` — string, hidden from serialization
 - `secret_token` — string, nullable, hidden from serialization
 - `owners(): BelongsToMany` — through `tg_bot_owners` pivot (bot_id ↔ user_id)
-- `modules(): BelongsToMany` — through `tg_bot_modules` pivot (bot_id ↔ chat_id)
-
-### TgBotModule
-
-Bot-to-chat binding. Auto-increment PK.
 
 - `id` — auto-increment
 - `bot_id` — FK → tg_bots.bot_id (cascade delete)
