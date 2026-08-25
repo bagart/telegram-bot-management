@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "bagart/telegram-bot-management-lib",
+    "name": "bagart/telegram-bot-management",
     "description": "Telegram Bot management library",
     "type": "library",
     "license": "MIT",

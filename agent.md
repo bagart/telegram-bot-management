@@ -1,6 +1,6 @@
 # Telegram Bot Management Lib — Architecture Context
 
-We are working on `bagart/telegram-bot-management-lib`.
+We are working on `bagart/telegram-bot-management`.
 
 This library provides multi-bot management for the Telegram Bot Platform:
 DB-backed bot storage, token resolution, outbound daemon orchestration, and CLI commands.
@@ -17,7 +17,7 @@ All Laravel-facing classes use concrete dependencies injected via the container.
 Laravel App (routes, controllers)
         │
         ▼
-telegram-bot-management-lib  (commands, models, token resolver)
+telegram-bot-management  (commands, models, token resolver)
         │
         ▼
 telegram-bot-lib  (service provider, outbound daemon, sender, webhook)
