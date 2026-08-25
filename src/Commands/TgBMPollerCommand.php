@@ -13,8 +13,8 @@ use BAGArt\TelegramBot\Contracts\ApiCommunication\TgBotApiClientContract;
 use BAGArt\TelegramBot\Contracts\ApiCommunication\TgBotApiDTOClientContract;
 use BAGArt\TelegramBot\Wrappers\Wrappers\TgOutputWrapper;
 use BAGArt\TelegramBotBasic\Commands\Traits\LongPollingCommandTrait;
-use BAGArt\TelegramBotManagement\Models\TgBot;
 use BAGArt\TelegramBotManagement\Commands\Processors\BmPollerEchoUpdateProcessor;
+use BAGArt\TelegramBotManagement\Models\TgBot;
 use Illuminate\Console\Command;
 
 class TgBMPollerCommand extends Command
@@ -45,14 +45,13 @@ class TgBMPollerCommand extends Command
         }
 
         $token = $tgBot->token;
-        $timeout = (int)$this->option('timeout');
+        $timeout = (int) $this->option('timeout');
         $once = $this->option('once');
         $echoMode = $this->option('echo');
         $showMode = $this->option('show');
 
-
         $asyncKernel = new AsyncKernel(logger: $logger);
-        $asyncKernel->addTickable(new ASKFiberScheduler());
+        $asyncKernel->addTickable(new ASKFiberScheduler);
 
         $configPoller = $this->buildConfigPoller(
             token: $token,
@@ -72,12 +71,8 @@ class TgBMPollerCommand extends Command
 
         $asyncKernel->addDaemon($configPoller);
 
-        if ($this->botSetup !== null) {
-            foreach ($this->botSetup->daemons as $daemon) {
-                $asyncKernel->addDaemon($daemon);
-            }
-        }
-
+        // TgBotSetup no longer carries daemons (readonly DTOs only) — extra
+        // daemons are built explicitly by their own commands.
         $asyncKernel->run();
 
         return self::SUCCESS;
