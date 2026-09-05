@@ -51,7 +51,7 @@ class TgBMPollerCommand extends Command
         $showMode = $this->option('show');
 
         $asyncKernel = new AsyncKernel(logger: $logger);
-        $asyncKernel->addTickable(new ASKFiberScheduler);
+        $asyncKernel->addTickable(new ASKFiberScheduler());
 
         $configPoller = $this->buildConfigPoller(
             token: $token,

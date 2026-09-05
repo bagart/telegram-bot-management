@@ -24,6 +24,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $module_id
  * @property bool $is_enabled
  * @property array|null $module_settings
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
  */
 class TgModuleEnablement extends Model
 {

@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace BAGArt\TelegramBotManagement\Commands;
 
-use BAGArt\TelegramBot\Contracts\Modules\ModuleEnablementContract;
 use BAGArt\TelegramBot\Modules\TgModuleRegistry;
-use BAGArt\TelegramBotManagement\Models\TgModuleEnablement;
+use BAGArt\TelegramBotManagement\Services\TgModuleEnablementService;
 use Illuminate\Console\Command;
 
+/**
+ * CLI toggles ride the guarded writer API (single-writer rule, §8.6) —
+ * platform-level scope included via $botId = null.
+ */
 abstract class TgModuleToggleCommand extends Command
 {
     protected bool $enable;
 
-    public function handle(ModuleEnablementContract $enablement, TgModuleRegistry $registry): int
+    public function handle(TgModuleEnablementService $enablement, TgModuleRegistry $registry): int
     {
         $moduleId = (string)$this->argument('module');
         $botId = $this->option('bot');
@@ -35,20 +38,7 @@ abstract class TgModuleToggleCommand extends Command
             return self::FAILURE;
         }
 
-        TgModuleEnablement::query()->updateOrCreate(
-            [
-                'bot_id' => $botId,
-                'chat_id' => $chatId,
-                'module_id' => $moduleId,
-            ],
-            [
-                'is_enabled' => $this->enable,
-            ],
-        );
-
-        if ($botId !== null) {
-            $enablement->refresh($botId, $chatId);
-        }
+        $enablement->setEnabled($moduleId, $botId, $chatId, $this->enable);
 
         $scope = $this->describeScope($botId, $chatId);
         $this->info(($this->enable ? 'Enabled' : 'Disabled')." module '{$moduleId}' {$scope}.");

@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "bagart/telegram-bot-management",
+    "name": "bagart/telegram-platform-management",
     "description": "Telegram Bot management library",
     "type": "library",
     "license": "MIT",
@@ -45,5 +45,28 @@
     },
     "scripts": {
         "test": "composer exec pest"
+    },
+    "repositories": {
+        "telegram-bot-lib": {
+            "type": "path",
+            "url": "../telegram-bot-lib"
+        },
+        "php-async-kernel-lib": {
+            "type": "path",
+            "url": "../php-async-kernel-lib"
+        },
+        "php-async-kernel-client": {
+            "type": "path",
+            "url": "../php-async-kernel-client"
+        },
+        "baseline": {
+            "type": "path",
+            "url": "../telegram-platform-devops-baseline"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require-dev": {
+        "bagart/telegram-platform-devops-baseline": "@dev"
     }
 }

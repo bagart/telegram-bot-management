@@ -34,12 +34,21 @@ class TelegramBotManagementServiceProvider extends ServiceProvider
 
     public function register(): void
     {
+        // Concrete class is the single-writer injection point (CLI commands
+        // type-hint it); contract bindings share this exact instance.
         $this->app->singleton(
-            \BAGArt\TelegramBot\Contracts\Modules\ModuleEnablementContract::class,
+            \BAGArt\TelegramBotManagement\Services\TgModuleEnablementService::class,
             fn ($app): \BAGArt\TelegramBotManagement\Services\TgModuleEnablementService => new \BAGArt\TelegramBotManagement\Services\TgModuleEnablementService(
                 moduleRegistry: $app->make(\BAGArt\TelegramBot\Modules\TgModuleRegistry::class),
                 cache: $app->make(\BAGArt\AsyncKernel\Wrappers\ASKCacheWrapper::class),
                 logger: $app->make(\BAGArt\AsyncKernel\Wrappers\ASKLogWrapper::class),
+            ),
+        );
+
+        $this->app->singleton(
+            \BAGArt\TelegramBot\Contracts\Modules\ModuleEnablementContract::class,
+            fn ($app): \BAGArt\TelegramBotManagement\Services\TgModuleEnablementService => $app->make(
+                \BAGArt\TelegramBotManagement\Services\TgModuleEnablementService::class
             ),
         );
 

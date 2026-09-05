@@ -72,8 +72,13 @@ class TgModulesDoctorCommand extends Command
         $problems = [];
 
         foreach ($registry->all() as $descriptor) {
-            foreach ($descriptor->requiresModules as $requirement) {
-                [$requiredId, $constraint] = $this->parseRequirement($requirement);
+            // Descriptors declare requiresModules as a map (id => constraint,
+            // TgModuleDescriptor contract); list entries ("id@constraint")
+            // are accepted as the legacy shape.
+            foreach ($descriptor->requiresModules as $key => $value) {
+                [$requiredId, $constraint] = is_int($key)
+                    ? $this->parseRequirement($value)
+                    : [$key, $value === '' ? null : $value];
                 $required = $registry->get($requiredId);
 
                 if ($required === null) {
@@ -134,6 +139,10 @@ class TgModulesDoctorCommand extends Command
      */
     private static function versionSatisfies(string $version, string $constraint): bool
     {
+        if (trim($constraint) === '*') {
+            return true;
+        }
+
         if (!preg_match('/^(>=|<=|>|<|=)\s*(.+)$/', trim($constraint), $m)) {
             return false;
         }

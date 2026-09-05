@@ -9,7 +9,10 @@ use BAGArt\AsyncKernel\Wrappers\ASKLogWrapper;
 use BAGArt\TelegramBot\Contracts\Modules\ModuleEnablementContract;
 use BAGArt\TelegramBot\Contracts\Modules\ModuleSettingsContract;
 use BAGArt\TelegramBot\Modules\TgModuleRegistry;
+use BAGArt\TelegramBotManagement\Exceptions\StaleWriteException;
 use BAGArt\TelegramBotManagement\Models\TgModuleEnablement;
+use Closure;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 /**
@@ -18,6 +21,14 @@ use Throwable;
  *
  * Steady-state webhooks hit only the cache (NFR-5: 0 SQL); SQL happens once
  * per (bot, chat) after TTL expiry or refresh().
+ *
+ * Single guarded write path for enablement/settings (menu RFC §8.6): every
+ * mutation of tg_module_enablements — web controllers, CLI commands, module
+ * callbacks — MUST go through setEnabled/setSettings. Authorization stays
+ * with callers; the service owns scope targeting, CAS conflict detection,
+ * cache invalidation and the menu epoch hook. Plugins never persist settings
+ * themselves: they call these methods and read via settingsWithMeta,
+ * honoring the version ladder on writes.
  */
 class TgModuleEnablementService implements ModuleEnablementContract, ModuleSettingsContract
 {
@@ -30,12 +41,27 @@ class TgModuleEnablementService implements ModuleEnablementContract, ModuleSetti
     /** @var array<string, array<string, array<string, mixed>>> in-memory settings map */
     private array $settingsMemory = [];
 
+    /**
+     * Menu epoch-bumper hook (§15.2), invoked exactly once after every
+     * committed write with ($moduleId, $botId, $chatId). Optional so
+     * management-lib does not depend on menu code; the menu provider
+     * registers its INCR implementation in its own bootstrapping. The bumper
+     * MUST NOT throw outward — it handles its own retries/degrade internally
+     * so a successful write is never reported as failed.
+     */
+    private ?Closure $epochBumper = null;
+
     public function __construct(
         private readonly TgModuleRegistry $moduleRegistry,
         private readonly ASKCacheWrapper $cache,
         private readonly int $ttlSeconds = 300,
         private readonly ?ASKLogWrapper $logger = null,
     ) {
+    }
+
+    public function setEpochBumper(?Closure $bumper): void
+    {
+        $this->epochBumper = $bumper;
     }
 
     public function isEnabled(string $moduleId, string $botId, int $chatId): bool
@@ -77,9 +103,9 @@ class TgModuleEnablementService implements ModuleEnablementContract, ModuleSetti
         return (bool)($this->moduleRegistry->defaultEnabledOf($moduleId) ?? false);
     }
 
-    public function refresh(string $botId, ?int $chatId = null): void
+    public function refresh(?string $botId = null, ?int $chatId = null): void
     {
-        if ($chatId !== null) {
+        if ($botId !== null && $chatId !== null) {
             unset($this->memory[$this->cacheKey($botId, $chatId)]);
             $this->cache->delete($this->cacheKey($botId, $chatId));
             unset($this->settingsMemory[$this->settingsCacheKey($botId, $chatId)]);
@@ -88,17 +114,20 @@ class TgModuleEnablementService implements ModuleEnablementContract, ModuleSetti
             return;
         }
 
-        // Bot/platform-level toggle: exact cached (bot, *) keys cannot be
+        // Bot/platform-level writes: exact cached (bot, *) keys cannot be
         // enumerated via PSR-16, so only in-memory entries are dropped here;
-        // cross-process staleness is bounded by the TTL (risk R-8).
+        // cross-process staleness is bounded by the TTL (risk R-8), and the
+        // menu epoch bump compensates at the bootstrap layer (§15.2).
+        $prefix = self::CACHE_PREFIX.($botId !== null ? $botId.'.' : '');
         foreach (array_keys($this->memory) as $key) {
-            if (str_starts_with($key, self::CACHE_PREFIX.$botId.'.')) {
+            if (str_starts_with($key, $prefix)) {
                 unset($this->memory[$key]);
             }
         }
 
+        $settingsPrefix = self::SETTINGS_CACHE_PREFIX.($botId !== null ? $botId.'.' : '');
         foreach (array_keys($this->settingsMemory) as $key) {
-            if (str_starts_with($key, self::SETTINGS_CACHE_PREFIX.$botId.'.')) {
+            if (str_starts_with($key, $settingsPrefix)) {
                 unset($this->settingsMemory[$key]);
             }
         }
@@ -114,6 +143,199 @@ class TgModuleEnablementService implements ModuleEnablementContract, ModuleSetti
     public function settingsFor(string $moduleId, string $botId, int $chatId): array
     {
         return $this->settingsMap($botId, $chatId)[$moduleId] ?? [];
+    }
+
+    public function setEnabled(string $moduleId, ?string $botId, ?int $chatId, bool $enabled): void
+    {
+        $this->upsert($moduleId, $botId, $chatId, fn (?TgModuleEnablement $row): array => [
+            'is_enabled' => $enabled,
+        ]);
+    }
+
+    /**
+     * Persist the full settings map for a module at an exact scope — REPLACE
+     * semantics: the stored map becomes exactly $settings. Partial patches
+     * read-modify-write via settingsWithMeta() first (honoring the version
+     * ladder when writing from a web surface).
+     *
+     * With $expectedVersion present the write is optimistic-concurrency
+     * guarded (§13.4bis): one UPDATE … WHERE <scope> AND updated_at =
+     * <expected>; zero affected rows ⇒ re-read and throw
+     * StaleWriteException{values, updatedAt}. Without it the write is plain
+     * last-write-wins (CLI / in-chat panel policy, §20).
+     *
+     * @param array<string, mixed> $settings
+     *
+     * @throws StaleWriteException on expectedVersion mismatch
+     */
+    public function setSettings(
+        string $moduleId,
+        ?string $botId,
+        ?int $chatId,
+        array $settings,
+        ?string $expectedVersion = null,
+    ): void {
+        if ($expectedVersion === null) {
+            $this->upsert($moduleId, $botId, $chatId, fn (?TgModuleEnablement $row): array => [
+                'module_settings' => $settings,
+            ]);
+
+            return;
+        }
+
+        $this->casUpdate($moduleId, $botId, $chatId, $settings, $expectedVersion);
+    }
+
+    /**
+     * Row-level stored settings + version token for rebase flows — NOT the
+     * merged inheritance view (the version belongs to one row). Absent row ⇒
+     * {values: [], updatedAt: ''} ("nothing persisted yet"; PUT then runs
+     * without expectedVersion).
+     *
+     * @return array{values: array<string, mixed>, updatedAt: string}
+     */
+    public function settingsWithMeta(string $moduleId, ?string $botId, ?int $chatId): array
+    {
+        $row = $this->scopedRows($moduleId, $botId, $chatId)->first();
+
+        if ($row === null) {
+            return ['values' => [], 'updatedAt' => ''];
+        }
+
+        return [
+            'values' => is_array($row->module_settings) ? $row->module_settings : [],
+            'updatedAt' => $this->versionToken($row),
+        ];
+    }
+
+    /**
+     * Upsert inside a transaction holding a scoped lock: the legacy unique
+     * index (bot_id, chat_id, module_id) is NULL-distinct in every engine, so
+     * plain updateOrCreate cannot serialize concurrent FIRST-writes for one
+     * logical scope — the lock + application-side collapse can (and it also
+     * heals duplicates created before the writer went live).
+     *
+     * @param callable(?TgModuleEnablement): array<string, mixed> $attributes
+     */
+    private function upsert(string $moduleId, ?string $botId, ?int $chatId, callable $attributes): void
+    {
+        DB::transaction(function () use ($moduleId, $botId, $chatId, $attributes): void {
+            $rows = $this->scopedRows($moduleId, $botId, $chatId)
+                ->lockForUpdate()
+                ->orderBy('updated_at')
+                ->get();
+
+            // First write at this scope: explicit row with table defaults
+            // (is_enabled=true), same as legacy CLI behavior.
+            $row = $rows->isEmpty()
+                ? new TgModuleEnablement(['bot_id' => $botId, 'chat_id' => $chatId, 'module_id' => $moduleId])
+                : $this->collapseDuplicates($rows);
+
+            $row->forceFill($attributes($row))->save();
+        });
+
+        $this->afterWrite($moduleId, $botId, $chatId);
+    }
+
+    /**
+     * CAS, not read-check-write (§8.6 v2.2): the guarded statement carries
+     * the whole conflict check; no lost-update window exists by construction.
+     * Storage reality accepted: timestampsTz has second precision, so two
+     * writes landing within the same wall-clock second are indistinguishable
+     * to the version compare — admin-frequency writes make this negligible.
+     */
+    private function casUpdate(
+        string $moduleId,
+        ?string $botId,
+        ?int $chatId,
+        array $settings,
+        string $expectedVersion,
+    ): void {
+        $affected = $this->scopedRows($moduleId, $botId, $chatId)
+            ->where('updated_at', $this->parseVersionToken($expectedVersion))
+            ->update(['module_settings' => json_encode($settings)]);
+
+        if ($affected > 0) {
+            $this->afterWrite($moduleId, $botId, $chatId);
+
+            return;
+        }
+
+        // Zero rows: version mismatch OR the row vanished between GET and
+        // PUT. Hand back the authoritative snapshot for the 409 body — a
+        // read-only re-read needs no lock: any concurrent writer would have
+        // to pass its own version check to change what we report.
+        $current = $this->scopedRows($moduleId, $botId, $chatId)->first();
+
+        throw new StaleWriteException(
+            values: $current !== null && is_array($current->module_settings) ? $current->module_settings : [],
+            updatedAt: $current !== null ? $this->versionToken($current) : '',
+        );
+    }
+
+    /** Collapse same-scope duplicates (NULL-distinct index legacy): newest wins, older settings fill gaps underneath. */
+    private function collapseDuplicates(\Illuminate\Support\Collection $rows): TgModuleEnablement
+    {
+        $keeper = $rows->last();
+        $merged = [];
+
+        foreach ($rows->take($rows->count() - 1) as $old) {
+            $merged = array_merge($merged, is_array($old->module_settings) ? $old->module_settings : []);
+            $old->delete();
+        }
+
+        // Keeper's own keys win; older rows only fill gaps underneath.
+        $keeper->module_settings = array_merge($merged, is_array($keeper->module_settings) ? $keeper->module_settings : []);
+
+        return $keeper;
+    }
+
+    /**
+     * Rows at one logical scope; NULL columns are matched explicitly, since
+     * SQL equality never matches NULL.
+     *
+     * @return \Illuminate\Database\Eloquent\Builder<TgModuleEnablement>
+     */
+    private function scopedRows(string $moduleId, ?string $botId, ?int $chatId)
+    {
+        return TgModuleEnablement::query()
+            ->where('module_id', $moduleId)
+            ->where(function ($q) use ($botId, $chatId): void {
+                // NULL columns are matched explicitly — SQL equality never
+                // matches NULL.
+                if ($botId === null) {
+                    $q->whereNull('bot_id');
+                } else {
+                    $q->where('bot_id', $botId);
+                }
+
+                if ($chatId === null) {
+                    $q->whereNull('chat_id');
+                } else {
+                    $q->where('chat_id', $chatId);
+                }
+            });
+    }
+
+    private function afterWrite(string $moduleId, ?string $botId, ?int $chatId): void
+    {
+        $this->refresh($botId, $chatId);
+
+        if ($this->epochBumper !== null) {
+            ($this->epochBumper)($moduleId, $botId, $chatId);
+        }
+    }
+
+    /** Version token format commitment (§27.6): ISO-8601 UTC microseconds + Z. */
+    private function versionToken(TgModuleEnablement $row): string
+    {
+        return $row->updated_at->toISOString();
+    }
+
+    private function parseVersionToken(string $expectedVersion): \Carbon\CarbonInterface
+    {
+        return \Carbon\Carbon::createFromFormat('Y-m-d\TH:i:s.u\Z', $expectedVersion, 'UTC')
+            ?? \Carbon\Carbon::parse($expectedVersion, 'UTC');
     }
 
     /**
